@@ -1,0 +1,49 @@
+<VirtualHost <%= vhost_name %>:<%= port %>>
+    ServerName <%= srvname %>
+<% if serveradmin %>
+    ServerAdmin <%= serveradmin %>
+<% end %>
+<% if serveraliases.is_a? Array -%>
+<% serveraliases.each do |name| -%><%= "    ServerAlias #{name}\n" %><% end -%>
+<% elsif serveraliases != '' -%>
+<%= "    ServerAlias #{serveraliases}" -%>
+<% end -%>
+
+    DocumentRoot <%= docroot %>
+
+    <Directory <%= docroot %>>
+        Options <%= options %>
+        AllowOverride <%= Array(override).join(' ') %>
+        Order allow,deny
+        allow from all
+    </Directory>
+
+    RewriteEngine on
+    RewriteCond <%= docroot %>/%{REQUEST_FILENAME} -s [OR]
+    RewriteCond <%= docroot %>/%{REQUEST_FILENAME} -l
+    RewriteRule ^.*$ - [NC,L]
+
+    # Go to our cache controller for merged cache files
+    RewriteRule ^/cache/(css|js)/.*$ /site.php [NC,L]
+    # Exempt all URLs within /cache/ from the default PHP rewrite
+    RewriteRule ^/cache/.*$ - [L]
+
+    # all other requests go to our controller
+    RewriteRule ^.*$ /site.php [NC,L]
+
+    ExpiresActive on
+    ExpiresByType text/css "access plus 24 hours"
+    ExpiresByType application/x-javascript "access plus 24 hours"
+    ExpiresByType application/x-shockwave-flash "access plus 24 hours"
+    ExpiresByType text/javascript "access plus 24 hours"
+    ExpiresByType image/jpg "access plus 24 hours"
+    ExpiresByType image/jpeg "access plus 24 hours"
+    ExpiresByType image/gif "access plus 24 hours"
+    ExpiresByType image/png "access plus 24 hours"
+
+    ErrorLog <%= logroot %>/<%= name %>_error.log
+    LogLevel warn
+    CustomLog <%= logroot %>/<%= name %>_access.log combined
+    ServerSignature Off
+</VirtualHost>
+
